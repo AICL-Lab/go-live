@@ -27,6 +27,8 @@ export default withMermaid(defineConfig({
           { text: 'Protocols', link: '/en/protocols/whip', activeMatch: '/en/protocols/' },
           { text: 'Features', link: '/en/features/auth', activeMatch: '/en/features/' },
           { text: 'API', link: '/en/api/endpoints', activeMatch: '/en/api/' },
+          { text: 'White Paper', link: '/en/white-paper/design-principles', activeMatch: '/en/white-paper/' },
+          { text: 'Decisions', link: '/en/decisions/0001-core-architecture', activeMatch: '/en/decisions/' },
         ],
         sidebar: {
           '/en/architecture/': [
@@ -68,6 +70,28 @@ export default withMermaid(defineConfig({
               ],
             },
           ],
+          '/en/white-paper/': [
+            {
+              text: 'White Paper',
+              items: [
+                { text: 'Design Principles', link: '/en/white-paper/design-principles' },
+                { text: 'Performance Benchmarks', link: '/en/white-paper/benchmarks' },
+                { text: 'Security Architecture', link: '/en/white-paper/security-architecture' },
+                { text: 'Project Comparisons', link: '/en/white-paper/comparisons' },
+                { text: 'References', link: '/en/white-paper/references' },
+              ],
+            },
+          ],
+          '/en/decisions/': [
+            {
+              text: 'Design Decisions',
+              items: [
+                { text: '0001: Core Architecture', link: '/en/decisions/0001-core-architecture' },
+                { text: '0002: WHIP/WHEP Integration', link: '/en/decisions/0002-whip-whep' },
+                { text: '0003: Recording Design', link: '/en/decisions/0003-recording-design' },
+              ],
+            },
+          ],
         },
       },
     },
@@ -84,6 +108,8 @@ export default withMermaid(defineConfig({
           { text: '协议规范', link: '/zh/protocols/whip', activeMatch: '/zh/protocols/' },
           { text: '功能模块', link: '/zh/features/auth', activeMatch: '/zh/features/' },
           { text: 'API 参考', link: '/zh/api/endpoints', activeMatch: '/zh/api/' },
+          { text: '技术白皮书', link: '/zh/white-paper/design-principles', activeMatch: '/zh/white-paper/' },
+          { text: '设计决策', link: '/zh/decisions/0001-core-architecture', activeMatch: '/zh/decisions/' },
         ],
         sidebar: {
           '/zh/architecture/': [
@@ -125,6 +151,28 @@ export default withMermaid(defineConfig({
               ],
             },
           ],
+          '/zh/white-paper/': [
+            {
+              text: '技术白皮书',
+              items: [
+                { text: '设计原则', link: '/zh/white-paper/design-principles' },
+                { text: '性能基准', link: '/zh/white-paper/benchmarks' },
+                { text: '安全架构', link: '/zh/white-paper/security-architecture' },
+                { text: '项目对比', link: '/zh/white-paper/comparisons' },
+                { text: '参考文献', link: '/zh/white-paper/references' },
+              ],
+            },
+          ],
+          '/zh/decisions/': [
+            {
+              text: '设计决策',
+              items: [
+                { text: '0001: 核心架构', link: '/zh/decisions/0001-core-architecture' },
+                { text: '0002: WHIP/WHEP 集成', link: '/zh/decisions/0002-whip-whep' },
+                { text: '0003: 录制设计', link: '/zh/decisions/0003-recording-design' },
+              ],
+            },
+          ],
         },
       },
     },
@@ -144,5 +192,12 @@ export default withMermaid(defineConfig({
 
   markdown: {
     lineNumbers: true,
+  },
+
+  mermaid: {
+    theme: {
+      light: 'default',
+      dark: 'dark',
+    },
   },
 }))

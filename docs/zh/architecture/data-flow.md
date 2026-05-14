@@ -72,6 +72,89 @@ sequenceDiagram
     H-->>V: 201 Created + SDP Answer
 ```
 
+## RTP 包转发流程
+
+```mermaid
+flowchart LR
+    subgraph 发布者
+        PT[发布者轨道]
+    end
+
+    subgraph SFU
+        RT[远程轨道] -->|ReadRTP| BUF[RTP 缓冲区]
+        BUF -->|WriteRTP| LT1[本地轨道 1]
+        BUF -->|WriteRTP| LT2[本地轨道 2]
+        BUF -->|WriteRTP| LT3[本地轨道 N]
+        BUF -->|WriteRTP| REC[录制器]
+    end
+
+    subgraph 订阅者
+        LT1 --> S1[订阅者 1]
+        LT2 --> S2[订阅者 2]
+        LT3 --> SN[订阅者 N]
+    end
+
+    PT -->|RTP| RT
+```
+
+## 断开连接流程
+
+### 发布者断开
+
+```mermaid
+sequenceDiagram
+    participant PC as PeerConnection
+    participant R as 房间
+    participant TF as TrackFanout
+    participant U as 上传器
+    participant S as 订阅者
+
+    PC->>PC: ICE 状态变更<br/>(Failed/Disconnected/Closed)
+    PC-->>R: OnICEStateChange 回调
+
+    R->>R: closePublisher()
+
+    loop 遍历每个 TrackFanout
+        R->>TF: close()
+        TF->>TF: 停止 readLoop
+        TF-->>R: 返回录制文件路径
+    end
+
+    R->>S: 关闭所有订阅者连接
+    R->>R: 清空订阅者列表
+
+    alt 启用上传
+        R->>U: uploadRecording(paths)
+        U->>U: PutObject 到 S3
+        opt 上传后删除
+            U->>U: 删除本地文件
+        end
+    end
+
+    R->>R: pruneIfEmpty()
+```
+
+### 订阅者断开
+
+```mermaid
+sequenceDiagram
+    participant PC as PeerConnection
+    participant R as 房间
+    participant TF as TrackFanout
+
+    PC->>PC: ICE 状态变更
+    PC-->>R: OnICEStateChange 回调
+
+    R->>R: removeSubscriber(id)
+
+    loop 遍历每个 TrackFanout
+        R->>TF: 移除本地轨道绑定
+    end
+
+    R->>PC: 关闭 PeerConnection
+    R->>R: pruneIfEmpty()
+```
+
 ## 认证流程
 
 ```mermaid
@@ -134,13 +217,53 @@ sequenceDiagram
     opt 发布者断开
         TF->>R: Close()
         R->>FS: 关闭文件
-        
+
         alt UPLOAD_RECORDINGS=1
             TF->>S3: PutObject(bucket, key, file)
-            
+
             opt DELETE_RECORDING_AFTER_UPLOAD=1
                 TF->>FS: 删除本地文件
             end
         end
     end
+```
+
+## 指标更新流程
+
+```mermaid
+flowchart TB
+    subgraph RTP["RTP 处理"]
+        READ[ReadRTP] --> UPDATE[更新指标]
+        UPDATE --> DISTRIB[分发给订阅者]
+    end
+
+    subgraph Metrics["Prometheus 指标"]
+        UPDATE --> ROOMS[live_rooms Gauge]
+        UPDATE --> SUBS[live_subscribers GaugeVec]
+        UPDATE --> BYTES[live_rtp_bytes_total CounterVec]
+        UPDATE --> PKTS[live_rtp_packets_total CounterVec]
+    end
+
+    subgraph Export["导出"]
+        ROOMS --> PROM[/metrics 端点]
+        SUBS --> PROM
+        BYTES --> PROM
+        PKTS --> PROM
+    end
+```
+
+## 请求限流
+
+```mermaid
+flowchart TB
+    REQ[请求] --> IP[提取客户端 IP]
+    IP --> BUCKET{令牌桶<br/>可用?}
+
+    BUCKET -->|是| ALLOW[允许请求]
+    BUCKET -->|否| REJECT[429 Too Many Requests]
+
+    ALLOW --> PROCESS[处理请求]
+    PROCESS --> UPDATE[更新令牌桶<br/>-1 令牌]
+
+    Note over BUCKET: 按 RATE_LIMIT_RPS 速率补充<br/>突发容量: RATE_LIMIT_BURST
 ```
